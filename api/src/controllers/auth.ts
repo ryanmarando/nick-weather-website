@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../config"; 
 
-// Login controller
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -46,3 +45,49 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const register = async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+  
+      if (!email || !password) {
+        res.status(400).json({ message: "Email and password are required" });
+        return
+      }
+  
+      // 1. Check if the email already exists
+      const existingAdmin = await prisma.admin.findUnique({ where: { email } });
+      if (existingAdmin) {
+        res.status(400).json({ message: "Admin with this email already exists" });
+        return
+      }
+  
+      // 2. Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      // 3. Create admin
+      const newAdmin = await prisma.admin.create({
+        data: { email, hashedPassword },
+      });
+  
+      // 4. Generate JWT
+      const token = jwt.sign(
+        { id: newAdmin.id, email: newAdmin.email },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "1h" }
+      );
+  
+      // 5. Return admin info + token
+      res.status(201).json({
+        message: "Admin registered successfully",
+        token,
+        admin: {
+          id: newAdmin.id,
+          email: newAdmin.email,
+        },
+      });
+    } catch (error) {
+      console.error("Register error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };

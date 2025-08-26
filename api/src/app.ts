@@ -3,6 +3,7 @@ import logging from "./middlware/logging"
 import blogRouter from "./routes/blog"
 import youtubeRouter from "./routes/youtube"
 import resumeRouter from "./routes/resume"
+import authRouter from "./routes/auth"
 
 const app = express();
 const PORT = 3001;
@@ -11,11 +12,14 @@ const PORT = 3001;
 app.use(express.json());
 app.use(logging.logRequest);
 
+
 // Routes
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello from Nick Dunn's Weather API!");
 });
 
+app.use("/auth", authRouter)
+app.use("/uploads", express.static("uploads"));
 app.use("/blog", blogRouter);
 app.use("/youtube", youtubeRouter);
 app.use("/resume", resumeRouter)
