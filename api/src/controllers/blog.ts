@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../config";
+import fs from "fs";
+import path from "path";
 
 // GET /blog — get all blogs
 export const getAllBlogs = async (req: Request, res: Response) => {
@@ -54,8 +56,6 @@ export const createBlog = async (req: Request, res: Response) => {
       return;
     }
 
-    console.log("Uploaded files:", req.files);
-
 
     const newBlog = await prisma.blogPost.create({
       data: {
@@ -87,30 +87,45 @@ export const createBlog = async (req: Request, res: Response) => {
 export const updateBlog = async (req: Request, res: Response) => {
   try {
     const blogId = Number(req.params.id);
-    const { title, content } = req.body;
+    const { title, content, deleteImageIds } = req.body;
 
-    if (!blogId) {
-      res.status(400).json({ message: "Please enter a blog id." });
-      return;
+    // Parse IDs to delete
+    const idsToDelete = deleteImageIds
+      ? (deleteImageIds as string).split(",").map(id => Number(id))
+      : [];
+
+    // ✅ Delete specified images
+    if (idsToDelete.length > 0) {
+      const imagesToDelete = await prisma.blogImage.findMany({
+        where: { id: { in: idsToDelete }, blogPostId: blogId },
+      });
+
+      for (const image of imagesToDelete) {
+        // ✅ Resolve the real file path from the stored URL
+        const filePath = path.join(__dirname, "..", "..", "uploads", path.basename(image.url));
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      await prisma.blogImage.deleteMany({
+        where: { id: { in: idsToDelete }, blogPostId: blogId },
+      });
     }
 
-    if (!title && !content && !req.files?.length) {
-      res.status(400).json({ message: "Nothing to update" });
-      return;
-    }
+    // ✅ Handle new uploaded images
+    const newImagesData = req.files
+      ? (req.files as Express.Multer.File[]).map(file => ({
+          url: `/uploads/${file.filename}`, 
+        }))
+      : [];
 
     const updatedBlog = await prisma.blogPost.update({
       where: { id: blogId },
       data: {
         title: title || undefined,
         content: content || undefined,
-        images: req.files
-          ? {
-              create: (req.files as Express.Multer.File[]).map(file => ({
-                url: `/uploads/${file.filename}`,
-              })),
-            }
-          : undefined,
+        images: newImagesData.length > 0 ? { create: newImagesData } : undefined,
       },
       include: { images: true },
     });
@@ -125,22 +140,40 @@ export const updateBlog = async (req: Request, res: Response) => {
 
 // DELETE /blog/:id — delete a blog
 export const deleteBlog = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const blog = await prisma.blogPost.findUnique({ where: { id: Number(id) } });
+  try {
+    // Find blog with its images
+    const blog = await prisma.blogPost.findUnique({
+      where: { id: parseInt(id) },
+      include: { images: true }
+    });
+
     if (!blog) {
-      res.status(404).json({ message: "Blog not found" });
-      return;
+      return res.status(404).json({ message: "Blog not found" });
     }
 
-    await prisma.blogPost.delete({ where: { id: Number(id) } });
+    // ✅ Delete images from file system
+    for (const image of blog.images) {
+      const imagePath = path.join(__dirname, "..", "..", "uploads", path.basename(image.url));
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath); // delete the file
+      }
+    }
 
-    res.json({ message: "Blog deleted successfully" });
-    return;
+    // ✅ Delete related images from DB first (to avoid FK constraint)
+    await prisma.blogImage.deleteMany({
+      where: { blogPostId: blog.id }
+    });
+
+    // ✅ Delete the blog post itself
+    await prisma.blogPost.delete({
+      where: { id: blog.id }
+    });
+
+    return res.json({ message: "Blog and associated images deleted successfully" });
   } catch (error) {
     console.error("Error deleting blog:", error);
-    res.status(500).json({ message: "Internal server error" });
-    return;
+    return res.status(500).json({ message: "Failed to delete blog" });
   }
 };
