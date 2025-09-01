@@ -49,9 +49,10 @@ model BlogImage {
 }
 
 model YoutubeVideo {
-  id      Int    @id @default(autoincrement())
-  url     String
-  title   String
-  Admin   Admin? @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  adminId Int?
+  id          Int     @id @default(autoincrement())
+  url         String
+  title       String
+  onFrontpage Boolean @default(false)
+  Admin       Admin?  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  adminId     Int?
 }

@@ -12,7 +12,7 @@ export const getAllVideos: RequestHandler = async (req, res) => {
 // CREATE a new YouTube video
 export const createYoutubeVideo = async (req: Request, res: Response) => {
   try {
-    const { url, title, adminId } = req.body;
+    const { url, title, adminId, onFrontpage } = req.body;
 
     if (!url || !title) {
       return res.status(400).json({ message: "URL and title are required" });
@@ -23,6 +23,7 @@ export const createYoutubeVideo = async (req: Request, res: Response) => {
         url,
         title,
         adminId: adminId ? parseInt(adminId) : undefined,
+        onFrontpage: onFrontpage ?? false
       },
     });
 
@@ -57,7 +58,7 @@ export const getYoutubeVideoById = async (req: Request, res: Response) => {
 export const updateYoutubeVideo = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { url, title } = req.body;
+    const { url, title, onFrontpage } = req.body;
 
     const existingVideo = await prisma.youtubeVideo.findUnique({
       where: { id: parseInt(id) },
@@ -72,6 +73,7 @@ export const updateYoutubeVideo = async (req: Request, res: Response) => {
       data: {
         url: url ?? existingVideo.url,
         title: title ?? existingVideo.title,
+        onFrontpage: onFrontpage ?? existingVideo.onFrontpage
       },
     });
 
