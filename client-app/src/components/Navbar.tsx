@@ -39,13 +39,15 @@ const Navbar: React.FC = () => {
               Broadcasting
             </Link>
           </li>
+          <li>
+            <Link to="/contact" className="hover:text-blue-600 transition">
+              Contact
+            </Link>
+          </li>
         </ul>
 
         {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-gray-700"
-          onClick={toggleMenu}
-        >
+        <button className="md:hidden text-gray-700" onClick={toggleMenu}>
           {isOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
@@ -72,6 +74,11 @@ const Navbar: React.FC = () => {
             <li>
               <Link to="/broadcasting" onClick={toggleMenu}>
                 Broadcasting
+              </Link>
+            </li>
+            <li>
+              <Link to="/contact" onClick={toggleMenu}>
+                Contact
               </Link>
             </li>
           </ul>

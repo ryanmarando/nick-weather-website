@@ -10,25 +10,14 @@ const Footer: React.FC = () => {
 
         <div className="flex space-x-6 mt-4 md:mt-0">
           <a
-            href="https://linkedin.com"
+            href="https://www.linkedin.com/in/nicholas-dunn-7335b41a5/"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-blue-400 transition"
           >
             LinkedIn
           </a>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-blue-400 transition"
-          >
-            GitHub
-          </a>
-          <a
-            href="/contact"
-            className="hover:text-blue-400 transition"
-          >
+          <a href="/contact" className="hover:text-blue-400 transition">
             Contact
           </a>
         </div>

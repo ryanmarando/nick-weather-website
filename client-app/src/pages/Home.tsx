@@ -1,51 +1,128 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchAPI } from "../functions/api";
+import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa";
+import { SiX } from "react-icons/si";
+import FacebookEmbed from "../components/Facebook";
 
 export default function HomePage() {
-  // Example: you can add state here
-  const [count, setCount] = useState(0);
+  const [youtubeVideoURL, setYoutubeVideoURL] = useState<string>("");
+
+  const getFrontYouTubePageVideo = async () => {
+    try {
+      const allVideos: any = await fetchAPI("/youtube");
+
+      // Find the frontpage video
+      const frontpageVideo = allVideos.find((video: any) => video.onFrontpage);
+
+      // Set the URL if a frontpage video exists
+      if (frontpageVideo) {
+        try {
+          const url = new URL(frontpageVideo.url);
+          const videoId = url.searchParams.get("v");
+          if (videoId) {
+            setYoutubeVideoURL(
+              `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`
+            );
+          } else {
+            console.warn("Video URL is not a watch URL:", frontpageVideo.url);
+          }
+        } catch (err) {
+          console.error("Invalid video URL:", frontpageVideo.url, err);
+        }
+      } else {
+        console.warn("No frontpage video found.");
+        setYoutubeVideoURL(""); // or a default
+      }
+    } catch (error) {
+      console.error("Error fetching YouTube videos:", error);
+    }
+  };
+
+  useEffect(() => {
+    getFrontYouTubePageVideo();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-900 via-blue-800 to-gray-900 text-white flex items-center justify-center">
-      <section className="w-full max-w-[1200px] flex flex-col lg:flex-row items-center justify-center text-center lg:text-left px-6 lg:px-20 py-20 gap-12">
-
+      <section className="w-full max-w-[1400px] flex flex-col lg:flex-row items-center justify-center text-center lg:text-left px-6 lg:px-20 py-20 gap-12">
         {/* Left Content */}
-        <div className="flex-1">
+        <div className="flex-1 max-w-lg flex flex-col items-center lg:items-start">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4">
             Nick Dunn
           </h1>
           <p className="text-lg md:text-2xl text-gray-300 mb-6">
-            Broadcast Meteorologist | Weather Enthusiast | Another?
+            Broadcast Meteorologist | Weather Enthusiast | NWA Digital Seal
+            Holder
           </p>
           <p className="text-gray-300 max-w-lg mb-8">
-            Passionate about delivering accurate forecasts and bringing weather science to life. 
-            Dedicated to innovating the weather broadcasting field to maintain the largest audience.
+            Passionate about delivering accurate forecasts and bringing weather
+            science to life. Dedicated to innovating the weather broadcasting
+            field to maintain the largest audience.
           </p>
           <a
-            href="#resume"
+            href="/resume"
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition"
           >
             View My Resume
           </a>
-        </div>
 
-        {/* Right Content */}
+          {/* Social Media Icons */}
+          <div className="flex mt-6 space-x-4 justify-center lg:justify-start">
+            <a
+              href="https://facebook.com/nickdunnwx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-blue-400 transition text-2xl"
+            >
+              <FaFacebookF />
+            </a>
+            <a
+              href="https://instagram.com/ndunn_whio"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-pink-500 transition text-2xl"
+            >
+              <FaInstagram />
+            </a>
+            <a
+              href="https://x.com/NickDunn_WX"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-blue-300 transition text-2xl"
+            >
+              <SiX />
+            </a>
+            <a
+              href="https://www.youtube.com/@NickDunnWX"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-red-600 transition text-2xl"
+            >
+              <FaYoutube />
+            </a>
+          </div>
+        </div>
+        {/* Right Content (Headshot + Video) */}
         <div className="flex-1 flex flex-col items-center lg:items-end gap-6">
           <img
-            src="/headshot.jpg"
+            src="/images/nick_headshot.jpeg"
             alt="Nick Dunn Headshot"
             className="w-48 h-48 lg:w-64 lg:h-64 rounded-full border-4 border-blue-400 shadow-lg object-cover"
           />
-          <div className="w-full max-w-md bg-gray-800 rounded-xl shadow-lg overflow-hidden lg:max-w-lg">
+
+          <div className="w-full max-w-md lg:max-w-lg bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <iframe
               className="w-full aspect-video"
-              src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+              src={youtubeVideoURL}
               title="Intro Video"
-              frameBorder="0"
               allowFullScreen
             ></iframe>
           </div>
         </div>
-
+        Facebook Embed
+        <div className="flex-1 w-full max-w-md lg:max-w-lg mt-6 lg:mt-0">
+          <FacebookEmbed />
+        </div>
       </section>
     </div>
   );
