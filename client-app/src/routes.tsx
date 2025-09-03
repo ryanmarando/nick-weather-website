@@ -7,6 +7,8 @@ import Resume from "./pages/Resume";
 import Contact from "./pages/Contact";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+import BlogDashboard from "./pages/BlogDashboard";
 
 const AppRoutes: React.FC = () => {
   const hostname = window.location.hostname;
@@ -16,7 +18,21 @@ const AppRoutes: React.FC = () => {
     return (
       <Routes>
         <Route path="/" element={<AdminLogin />} />
-        <Route path="/dashboard" element={<AdminDashboard />} />
+        {/* Protected dashboard */}
+        {/* Protected admin dashboard and nested pages */}
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        >
+          {/* Nested route for creating blog posts */}
+          <Route path="blog" element={<BlogDashboard />} />
+          {/* You can add other nested dashboard pages here */}
+        </Route>
+
         {/* Add more admin routes here */}
       </Routes>
     );

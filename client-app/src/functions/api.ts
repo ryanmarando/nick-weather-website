@@ -23,6 +23,8 @@ export async function fetchAPI<T>(
     body: body ? JSON.stringify(body) : undefined,
   });
 
+  console.log(response);
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Request failed: ${response.status} - ${errorText}`);
@@ -36,7 +38,7 @@ export async function fetchAuth<T>(
   route: string,
   token: string,
   options: {
-    method?: "GET" | "POST" | "PUT" | "DELETE";
+    method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
     body?: any;
     headers?: Record<string, string>;
   } = {}

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 export default function AdminDashboard() {
   return (
@@ -14,7 +14,7 @@ export default function AdminDashboard() {
         </Link>
 
         <Link
-          to="/dashboard/blog"
+          to="blog"
           className="bg-gray-800 hover:bg-gray-700 p-6 rounded-lg shadow-md text-center"
         >
           Manage Blog Posts
@@ -34,6 +34,7 @@ export default function AdminDashboard() {
           Facebook Embed / Posts
         </Link>
       </div>
+      <Outlet />
     </div>
   );
 }

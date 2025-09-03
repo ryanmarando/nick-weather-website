@@ -3,24 +3,31 @@ import { useNavigate } from "react-router-dom";
 import { fetchAPI } from "../functions/api";
 
 export default function AdminLogin() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  //   const login = await fetchAPI("/auth/login", {
-  //     method: "POST",
-  //     body: { email: "nick.dunn@gmail.com", password: "xxx" },
-  //   });
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: any) => {
     e.preventDefault();
+    console.log("Login clicked");
 
-    // Simple client-side auth (replace with API later)
-    if (username === "admin" && password === "password123") {
-      navigate("/dashboard"); // redirect to dashboard
-    } else {
-      setError("Invalid username or password");
+    try {
+      console.log("Sending POST...");
+      const res: any = await fetchAPI(`/auth/login`, {
+        method: "POST",
+        body: { email, password },
+      });
+      console.log("Response received:", res);
+
+      // Save token in localStorage
+      localStorage.setItem("token", res.token);
+
+      // Redirect to dashboard
+      navigate("/dashboard");
+    } catch (err: any) {
+      console.error("Fetch error:", err);
+      setError(err.message || "Login failed");
     }
   };
 
@@ -39,8 +46,8 @@ export default function AdminLogin() {
         <input
           type="text"
           placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="mb-4 p-2 w-full rounded bg-gray-700 text-white"
         />
 
