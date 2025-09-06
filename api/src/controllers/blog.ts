@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../config";
-import fs from "fs";
-import path from "path";
+import { deleteFromS3 } from "../middlware/s3Client";
 
 // GET /blog — get all blogs
 export const getAllBlogs = async (req: Request, res: Response) => {
@@ -80,19 +79,28 @@ export const updateBlog = async (req: Request, res: Response) => {
     const blogId = Number(req.params.id);
     const { title, content, deleteImageIds, newImageUrls } = req.body;
 
-    // Parse IDs to delete
     const idsToDelete = deleteImageIds
-      ? (deleteImageIds as string).split(",").map((id) => Number(id))
+      ? (deleteImageIds as string).split(",").map(Number)
       : [];
 
-    // ✅ Delete specified images from DB only
     if (idsToDelete.length > 0) {
+      // Find images to delete from S3
+      const imagesToDelete = await prisma.blogImage.findMany({
+        where: { id: { in: idsToDelete }, blogPostId: blogId },
+      });
+
+      // Delete from S3
+      for (const img of imagesToDelete) {
+        const key = img.url.split("/").pop();
+        if (key) await deleteFromS3(key);
+      }
+
+      // Delete from DB
       await prisma.blogImage.deleteMany({
         where: { id: { in: idsToDelete }, blogPostId: blogId },
       });
     }
 
-    // ✅ Handle new images (from S3 URLs)
     const newImagesData = newImageUrls
       ? (newImageUrls as string[]).map((url) => ({ url }))
       : [];
@@ -120,29 +128,30 @@ export const deleteBlog = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    // Find blog with its images
     const blog = await prisma.blogPost.findUnique({
       where: { id: parseInt(id) },
       include: { images: true },
     });
 
-    if (!blog) {
-      return res.status(404).json({ message: "Blog not found" });
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    // Delete images from S3
+    for (const img of blog.images) {
+      const key = img.url.split("/").pop();
+      if (key) await deleteFromS3(key);
     }
 
-    // ✅ Delete related images from DB only
+    // Delete images from DB
     await prisma.blogImage.deleteMany({
       where: { blogPostId: blog.id },
     });
 
-    // ✅ Delete the blog post itself
+    // Delete blog itself
     await prisma.blogPost.delete({
       where: { id: blog.id },
     });
 
-    return res.json({
-      message: "Blog delete successfully",
-    });
+    return res.json({ message: "Blog deleted successfully" });
   } catch (error) {
     console.error("Error deleting blog:", error);
     return res.status(500).json({ message: "Failed to delete blog" });

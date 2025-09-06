@@ -119,7 +119,7 @@ export default function HomePage() {
             ></iframe>
           </div>
         </div>
-        Facebook Embed
+
         <div className="flex-1 w-full max-w-md lg:max-w-lg mt-6 lg:mt-0">
           <FacebookEmbed />
         </div>

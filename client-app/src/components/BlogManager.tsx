@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { fetchAuth, fetchAPI } from "../functions/api";
+import { useState } from "react";
+import { fetchAuth } from "../functions/api";
 
 interface BlogImage {
   id: number;
@@ -13,34 +13,24 @@ interface Blog {
   images: BlogImage[];
 }
 
-export default function BlogManager() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
+export default function BlogManager({
+  blogs,
+  setBlogs,
+  loading,
+  error,
+}: {
+  blogs: Blog[];
+  setBlogs: React.Dispatch<React.SetStateAction<Blog[]>>;
+  loading: boolean;
+  error: string;
+}) {
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [editingBlog, setEditingBlog] = useState<
     (Blog & { newImageUrls?: string[] }) | null
   >(null);
+  const [deleteImageIds, setDeleteImageIds] = useState<number[]>([]);
 
   const token = localStorage.getItem("token") || "";
-
-  // Load all blogs
-  const loadBlogs = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchAPI<{ blogs: Blog[] }>("/blog");
-      setBlogs(data.blogs);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to load blogs");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadBlogs();
-  }, []);
 
   // Delete blog
   const handleDelete = async (id: number) => {
@@ -63,29 +53,27 @@ export default function BlogManager() {
           title: editingBlog.title,
           content: editingBlog.content,
           newImageUrls: editingBlog.newImageUrls || [],
+          deleteImageIds,
         },
       });
 
       setBlogs((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
       setEditingBlog(null);
+      setDeleteImageIds([]);
     } catch (err: any) {
       alert("Failed to update blog: " + err.message);
     }
   };
 
-  // Remove an image from blog
-  const handleRemoveImage = async (blogId: number, imgId: number) => {
-    try {
-      const updated: Blog = await fetchAuth(
-        `/blog/${blogId}/image/${imgId}`,
-        token,
-        {
-          method: "DELETE",
-        }
-      );
-      setBlogs((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-    } catch (err: any) {
-      alert("Failed to remove image: " + err.message);
+  const handleMarkImageForDeletion = (imgId: number) => {
+    setDeleteImageIds((prev) => [...prev, imgId]);
+
+    // Also remove it from editingBlog.images so the UI updates immediately
+    if (editingBlog) {
+      setEditingBlog({
+        ...editingBlog,
+        images: editingBlog.images.filter((img) => img.id !== imgId),
+      });
     }
   };
 
@@ -96,7 +84,7 @@ export default function BlogManager() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
+    <div className="bg-gray-900 text-white p-6">
       <h1 className="text-2xl font-bold mb-4">Manage Blogs</h1>
 
       {error && <p className="text-red-500">{error}</p>}
@@ -162,7 +150,7 @@ export default function BlogManager() {
                         className="w-32 h-32 object-cover rounded"
                       />
                       <button
-                        onClick={() => handleRemoveImage(blog.id, img.id)}
+                        onClick={() => handleMarkImageForDeletion(img.id)}
                         className="absolute top-1 right-1 bg-red-600 px-1 rounded text-xs"
                       >
                         ✕

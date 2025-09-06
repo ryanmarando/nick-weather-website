@@ -14,7 +14,7 @@ export default function AdminDashboard() {
         </Link>
 
         <Link
-          to="blog"
+          to="/dashboard/blog"
           className="bg-gray-800 hover:bg-gray-700 p-6 rounded-lg shadow-md text-center"
         >
           Manage Blog Posts

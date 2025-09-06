@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { fetchAuth } from "../functions/api"; // your existing fetch helper
+import { fetchAuth } from "../functions/api";
 
-export default function CreateBlog() {
+export default function CreateBlog({
+  onBlogCreated,
+}: {
+  onBlogCreated: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -63,6 +67,7 @@ export default function CreateBlog() {
       });
 
       console.log(blogRes);
+      onBlogCreated();
 
       setSuccessMsg("Blog created successfully!");
       setTitle("");
@@ -77,7 +82,7 @@ export default function CreateBlog() {
   };
 
   return (
-    <div className="p-8 bg-gray-900 text-white min-h-screen">
+    <div className="p-8 bg-gray-900 text-white">
       <h1 className="text-3xl font-bold mb-6">Create Blog Post</h1>
 
       {successMsg && <p className="text-green-500 mb-4">{successMsg}</p>}
