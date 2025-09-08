@@ -8,7 +8,7 @@ import authRouter from "./routes/auth";
 import s3Router from "./routes/s3";
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PORT);
 
 const corsOptions = {
   origin: ["http://localhost:5173", "http://admin.localhost:5173"],
