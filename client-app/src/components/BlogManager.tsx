@@ -100,7 +100,7 @@ export default function BlogManager({
       />
 
       {/* Blog List */}
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 w-full">
         {filteredBlogs.map((blog) => (
           <div key={blog.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
             {editingBlog?.id === blog.id ? (
