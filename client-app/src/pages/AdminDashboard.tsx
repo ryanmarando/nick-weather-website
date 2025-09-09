@@ -26,13 +26,6 @@ export default function AdminDashboard() {
         >
           Update Resume
         </Link>
-
-        <Link
-          to="/dashboard/facebook"
-          className="bg-gray-800 hover:bg-gray-700 p-6 rounded-lg shadow-md text-center"
-        >
-          Facebook Embed / Posts
-        </Link>
       </div>
       <Outlet />
     </div>

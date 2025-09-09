@@ -21,7 +21,6 @@ export default function CreateResume({ onResumeUploaded }: Props) {
     setUploading(true);
     try {
       // 1. Get pre-signed URL
-      const token = localStorage.getItem("token");
       const presignRes = await fetchAuth<{
         uploadURL: string;
         fileUrl: string;
@@ -29,6 +28,8 @@ export default function CreateResume({ onResumeUploaded }: Props) {
         method: "POST",
         body: { fileName: file.name, fileType: file.type },
       });
+
+      console.log(presignRes);
 
       // 2. Upload file to S3
       await fetch(presignRes.uploadURL, {
@@ -39,11 +40,13 @@ export default function CreateResume({ onResumeUploaded }: Props) {
         },
       });
 
+      const imageUrl = presignRes.fileUrl;
+
       // 3. Save record in DB
       const resumeRes = await fetchAuth("/resume", token!, {
         method: "POST",
         body: {
-          fileURL: presignRes.fileUrl,
+          fileUrl: imageUrl,
           adminId: 1,
         },
       });

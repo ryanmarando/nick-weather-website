@@ -1,4 +1,4 @@
-import { fetchAPI } from "../functions/api";
+import { fetchAuth } from "../functions/api";
 
 interface Resume {
   id: number;
@@ -22,9 +22,11 @@ export default function ResumeManager({
 }: Props) {
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this resume?")) return;
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No authentication token found.");
 
     try {
-      await fetchAPI(`/resume/${id}`, { method: "DELETE" });
+      await fetchAuth(`/resume/${id}`, token, { method: "DELETE" });
       setResumes(resumes.filter((r) => r.id !== id));
     } catch (err: any) {
       alert("Delete failed: " + err.message);

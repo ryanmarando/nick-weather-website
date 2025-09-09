@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import BlogDashboard from "./pages/BlogDashboard";
 import BlogDetail from "./pages/BlogDetail";
 import ResumeDashboard from "./pages/ResumeDashboard";
+import YoutubeManager from "./components/YoutubeManager";
 
 const AppRoutes: React.FC = () => {
   const hostname = window.location.hostname;
@@ -33,6 +34,7 @@ const AppRoutes: React.FC = () => {
           {/* Nested route for creating blog posts */}
           <Route path="blog" element={<BlogDashboard />} />
           <Route path="resume" element={<ResumeDashboard />} />
+          <Route path="youtube" element={<YoutubeManager />} />
           {/* You can add other nested dashboard pages here */}
         </Route>
 
