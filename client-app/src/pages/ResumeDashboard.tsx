@@ -32,7 +32,7 @@ export default function ResumeDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-900 text-white w-full px-4">
+    <div className="min-h-screen flex flex-col items-center bg-gray-900 text-white w-full px-4 py-4">
       <CreateResume onResumeUploaded={loadResumes} />
       <ResumeManager
         resumes={resumes}
