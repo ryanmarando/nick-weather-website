@@ -6,6 +6,24 @@ import FacebookEmbed from "../components/Facebook";
 
 export default function HomePage() {
   const [youtubeVideoURL, setYoutubeVideoURL] = useState<string>("");
+  const [latestBlog, setLatestBlog] = useState<any>(null);
+
+  const getLatestBlog = async () => {
+    try {
+      const res: any = await fetchAPI("/blog");
+
+      if (res.blogs && res.blogs.length > 0) {
+        // Sort newest → oldest by createdAt
+        const sorted = res.blogs.sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setLatestBlog(sorted[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
+    }
+  };
 
   const getFrontYouTubePageVideo = async () => {
     try {
@@ -39,12 +57,14 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    getLatestBlog();
     getFrontYouTubePageVideo();
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-900 via-blue-800 to-gray-900 text-white flex items-center justify-center">
-      <section className="w-full max-w-[1400px] flex flex-col lg:flex-row items-center justify-center text-center lg:text-left px-6 lg:px-20 py-20 gap-12">
+    <div className="min-h-screen bg-gradient-to-b from-red-900 via-blue-800 to-gray-900 text-white">
+      {/* Hero Section */}
+      <section className="w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row items-center justify-center text-center lg:text-left px-6 lg:px-20 py-20 gap-12">
         {/* Left Content */}
         <div className="flex-1 max-w-lg flex flex-col items-center lg:items-start">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4">
@@ -102,7 +122,8 @@ export default function HomePage() {
             </a>
           </div>
         </div>
-        {/* Right Content (Headshot + Video) */}
+
+        {/* Right Content */}
         <div className="flex-1 flex flex-col items-center lg:items-end gap-6">
           <img
             src="/images/nick_headshot.jpeg"
@@ -120,10 +141,54 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Facebook */}
         <div className="flex-1 w-full max-w-md lg:max-w-lg mt-6 lg:mt-0">
           <FacebookEmbed />
         </div>
       </section>
+
+      {/* Latest Blog */}
+      {latestBlog && (
+        <div className="w-full bg-gray-800 text-white py-8 px-6 lg:px-20">
+          <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
+            {/* Blog text */}
+            <div className="flex-1">
+              <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                Latest Post
+              </h2>
+              <h3 className="text-xl font-semibold text-blue-400 mb-2">
+                {latestBlog.title}
+              </h3>
+              <p className="text-gray-300 mb-4 line-clamp-3">
+                {latestBlog.content.slice(0, 150)}...
+              </p>
+              <div className="flex space-x-4">
+                <a
+                  href={`/blog/${latestBlog.id}`}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition"
+                >
+                  Read More
+                </a>
+                <a
+                  href="/blog"
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition"
+                >
+                  All Blogs
+                </a>
+              </div>
+            </div>
+
+            {/* Blog image */}
+            {latestBlog.images && latestBlog.images.length > 0 && (
+              <img
+                src={latestBlog.images[0].url}
+                alt={latestBlog.title}
+                className="w-full max-w-sm rounded-lg shadow-md object-cover"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

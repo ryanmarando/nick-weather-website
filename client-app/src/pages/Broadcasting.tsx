@@ -99,31 +99,30 @@ export default function Broadcasting() {
       </div>
 
       {/* Bottom Images */}
-      <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 place-items-center">
+      <div className="text-center py-8">
+        <h1 className="text-3xl font-bold">Graphics empowered for TV</h1>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-6 place-items-center">
         <img
-          src="/images/logo1.png"
-          alt="Logo 1"
-          className="h-16 object-contain"
+          src="/images/graphic1.jpeg"
+          alt="Graphic 1"
+          className="h-48 object-contain"
         />
         <img
-          src="/images/logo2.png"
-          alt="Logo 2"
-          className="h-16 object-contain"
+          src="/images/graphic2.jpeg"
+          alt="Graphic 2"
+          className="h-48 object-contain"
         />
         <img
-          src="/images/logo3.png"
-          alt="Logo 3"
-          className="h-16 object-contain"
+          src="/images/graphic3.jpeg"
+          alt="Graphic 3"
+          className="h-48 object-contain"
         />
         <img
-          src="/images/logo4.png"
-          alt="Logo 4"
-          className="h-16 object-contain"
-        />
-        <img
-          src="/images/logo5.png"
-          alt="Logo 5"
-          className="h-16 object-contain"
+          src="/images/graphic4.jpeg"
+          alt="Graphic 4"
+          className="h-48 object-contain"
         />
       </div>
     </div>
