@@ -5,13 +5,20 @@ import Footer from "./components/Footer";
 import AppRoutes from "./routes";
 
 const App: React.FC = () => {
+  const hostname = window.location.hostname;
+  const isAdmin = hostname.startsWith("admin.");
+
   return (
     <Router>
-      <Navbar />
-      <div className="pt-20">
+      {/* Only show Navbar if NOT on admin subdomain */}
+      {!isAdmin && <Navbar />}
+
+      <div className={!isAdmin ? "pt-20" : ""}>
         <AppRoutes />
       </div>
-      <Footer />
+
+      {/* Only show Footer if NOT on admin subdomain */}
+      {!isAdmin && <Footer />}
     </Router>
   );
 };
