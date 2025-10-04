@@ -14,8 +14,9 @@ type BlogBlock =
 interface Blog {
   id: number;
   title: string;
-  blocks: BlogBlock[];
-  images: BlogImage[];
+  blocks?: BlogBlock[] | null; // may be null for old blogs
+  content?: string; // fallback for old blogs
+  images?: BlogImage[];
   author?: string;
   createdAt?: string;
 }
@@ -46,6 +47,17 @@ export default function BlogDetail() {
   if (error) return <p className="p-6 text-red-500">{error}</p>;
   if (!blog) return null;
 
+  // Normalize blocks to always be an array
+  const blocks: BlogBlock[] = blog.blocks ?? [];
+
+  // For old blogs with no blocks, create a single paragraph block from content
+  const displayBlocks =
+    blocks.length > 0
+      ? blocks
+      : blog.content
+      ? [{ type: "paragraph", text: blog.content }]
+      : [];
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-3xl mx-auto">
@@ -64,7 +76,7 @@ export default function BlogDetail() {
 
         {/* Render blocks */}
         <div className="mt-6 space-y-6">
-          {blog.blocks.map((block, i) => {
+          {displayBlocks.map((block, i) => {
             if (block.type === "paragraph") {
               return (
                 <p key={i} className="text-lg leading-relaxed">
@@ -72,18 +84,26 @@ export default function BlogDetail() {
                 </p>
               );
             }
+
+            // Type guard for image blocks
             if (block.type === "image") {
+              const imageBlock = block as {
+                type: "image";
+                url: string;
+                isMain?: boolean;
+              };
               return (
                 <img
                   key={i}
-                  src={block.url}
+                  src={imageBlock.url}
                   alt={`Blog image ${i + 1}`}
                   className={`w-full rounded-lg ${
-                    block.isMain ? "border-4 border-yellow-400" : ""
+                    imageBlock.isMain ? "border-4 border-yellow-400" : ""
                   }`}
                 />
               );
             }
+
             return null;
           })}
         </div>
