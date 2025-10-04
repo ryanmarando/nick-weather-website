@@ -48,19 +48,20 @@ export const getBlogById = async (req: Request, res: Response) => {
 // POST /blog — create a new blog
 export const createBlog = async (req: Request, res: Response) => {
   try {
-    const { title, content, imageUrls } = req.body;
+    const { title, content, imageUrls, blocks } = req.body;
 
-    if (!title || !content) {
-      res.status(400).json({ message: "Title and content are required" });
+    if (!title) {
+      res.status(400).json({ message: "Title is required" });
       return;
     }
 
     const newBlog = await prisma.blogPost.create({
       data: {
         title,
-        content,
+        content: content || "",
+        blocks: blocks || [],
         images: {
-          create: imageUrls ? imageUrls.map((url: string) => ({ url })) : [],
+          create: imageUrls?.map((url: string) => ({ url })) || [],
         },
       },
       include: { images: true },
@@ -77,14 +78,17 @@ export const createBlog = async (req: Request, res: Response) => {
 export const updateBlog = async (req: Request, res: Response) => {
   try {
     const blogId = Number(req.params.id);
-    const { title, content, deleteImageIds, newImageUrls } = req.body;
+    const { title, content, deleteImageIds, newImageUrls, blocks } = req.body;
 
-    const idsToDelete = deleteImageIds
+    // Support both number[] and comma-separated string for deleteImageIds
+    const idsToDelete: number[] = Array.isArray(deleteImageIds)
+      ? deleteImageIds
+      : deleteImageIds
       ? (deleteImageIds as string).split(",").map(Number)
       : [];
 
+    // Delete images if any
     if (idsToDelete.length > 0) {
-      // Find images to delete from S3
       const imagesToDelete = await prisma.blogImage.findMany({
         where: { id: { in: idsToDelete }, blogPostId: blogId },
       });
@@ -101,15 +105,18 @@ export const updateBlog = async (req: Request, res: Response) => {
       });
     }
 
-    const newImagesData = newImageUrls
-      ? (newImageUrls as string[]).map((url) => ({ url }))
+    // Prepare new images for creation
+    const newImagesData = Array.isArray(newImageUrls)
+      ? newImageUrls.map((url) => ({ url }))
       : [];
 
+    // Update blog
     const updatedBlog = await prisma.blogPost.update({
       where: { id: blogId },
       data: {
         title: title || undefined,
         content: content || undefined,
+        blocks: blocks || undefined,
         images:
           newImagesData.length > 0 ? { create: newImagesData } : undefined,
       },

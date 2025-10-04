@@ -71,7 +71,7 @@ export default function HomePage() {
             Nick Dunn
           </h1>
           <p className="text-lg md:text-2xl text-gray-300 mb-6">
-            Broadcast Meteorologist | Weather Enthusiast | NWA Digital Seal
+            Broadcast Meteorologist | Weather Enthusiast | NWA TV & Digital Seal
             Holder
           </p>
           <p className="text-gray-300 max-w-lg mb-8">
@@ -148,6 +148,7 @@ export default function HomePage() {
       </section>
 
       {/* Latest Blog */}
+      {/* Latest Blog */}
       {latestBlog && (
         <div className="w-full bg-gray-800 text-white py-8 px-6 lg:px-20">
           <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
@@ -159,9 +160,20 @@ export default function HomePage() {
               <h3 className="text-xl font-semibold text-blue-400 mb-2">
                 {latestBlog.title}
               </h3>
+
+              {/* Preview text: paragraph blocks first, fallback to content */}
               <p className="text-gray-300 mb-4 line-clamp-3">
-                {latestBlog.content.slice(0, 150)}...
+                {(
+                  latestBlog.blocks
+                    ?.filter((b: any) => b.type === "paragraph" && b.text)
+                    .map((b: any) => b.text)
+                    .join(" ") ||
+                  latestBlog.content ||
+                  ""
+                ).slice(0, 150)}
+                ...
               </p>
+
               <div className="flex space-x-4">
                 <a
                   href={`/blog/${latestBlog.id}`}
@@ -179,9 +191,20 @@ export default function HomePage() {
             </div>
 
             {/* Blog image */}
-            {latestBlog.images && latestBlog.images.length > 0 && (
+            {(latestBlog.blocks?.find(
+              (b: any) => b.type === "image" && b.isMain
+            )?.url ||
+              latestBlog.blocks?.find((b: any) => b.type === "image")?.url ||
+              latestBlog.images?.[0]?.url) && (
               <img
-                src={latestBlog.images[0].url}
+                src={
+                  latestBlog.blocks?.find(
+                    (b: any) => b.type === "image" && b.isMain
+                  )?.url ||
+                  latestBlog.blocks?.find((b: any) => b.type === "image")
+                    ?.url ||
+                  latestBlog.images?.[0]?.url
+                }
                 alt={latestBlog.title}
                 className="w-full max-w-sm rounded-lg shadow-md object-cover"
               />

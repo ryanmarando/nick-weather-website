@@ -1,5 +1,14 @@
 import { useState } from "react";
 import { fetchAuth } from "../functions/api";
+import { uploadFile } from "../functions/upload";
+
+interface BlogBlock {
+  id?: number;
+  type: "paragraph" | "image";
+  text?: string;
+  url?: string;
+  isMain?: boolean;
+}
 
 interface BlogImage {
   id: number;
@@ -9,8 +18,10 @@ interface BlogImage {
 interface Blog {
   id: number;
   title: string;
-  content: string;
-  images: BlogImage[];
+  content?: string;
+  images?: BlogImage[];
+  blocks?: BlogBlock[];
+  newImageUrls?: string[];
 }
 
 export default function BlogManager({
@@ -25,14 +36,12 @@ export default function BlogManager({
   error: string;
 }) {
   const [search, setSearch] = useState("");
-  const [editingBlog, setEditingBlog] = useState<
-    (Blog & { newImageUrls?: string[] }) | null
-  >(null);
+  const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const [deleteImageIds, setDeleteImageIds] = useState<number[]>([]);
+  const [newBlocks, setNewBlocks] = useState<BlogBlock[]>([]);
 
   const token = localStorage.getItem("token") || "";
 
-  // Delete blog
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this blog?")) return;
     try {
@@ -43,45 +52,70 @@ export default function BlogManager({
     }
   };
 
-  // Save edited blog
   const handleSaveEdit = async () => {
     if (!editingBlog) return;
+
+    const allBlocks = editingBlog.blocks ? [...editingBlog.blocks] : [];
+    if (newBlocks.length) allBlocks.push(...newBlocks);
+
+    const body: any = {
+      title: editingBlog.title,
+      blocks: allBlocks.length ? allBlocks : undefined,
+      content: allBlocks.length ? undefined : editingBlog.content,
+      newImageUrls: editingBlog.newImageUrls,
+      deleteImageIds,
+    };
+
     try {
-      const updated: Blog = await fetchAuth(`/blog/${editingBlog.id}`, token, {
+      await fetchAuth(`/blog/${editingBlog.id}`, token, {
         method: "PATCH",
-        body: {
-          title: editingBlog.title,
-          content: editingBlog.content,
-          newImageUrls: editingBlog.newImageUrls || [],
-          deleteImageIds,
-        },
+        body,
       });
 
-      setBlogs((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+      // Fetch latest blogs correctly
+      const data = await fetchAuth<{ blogs: Blog[] }>("/blog", token);
+      setBlogs(Array.isArray(data.blogs) ? data.blogs : []);
+
       setEditingBlog(null);
       setDeleteImageIds([]);
+      setNewBlocks([]);
     } catch (err: any) {
       alert("Failed to update blog: " + err.message);
     }
   };
 
-  const handleMarkImageForDeletion = (imgId: number) => {
-    setDeleteImageIds((prev) => [...prev, imgId]);
+  const handleDeleteBlock = (block?: BlogBlock, index?: number) => {
+    if (!editingBlog) return;
 
-    // Also remove it from editingBlog.images so the UI updates immediately
-    if (editingBlog) {
+    if (block) {
+      // Existing block
+      if (block.type === "image" && block.id !== undefined) {
+        setDeleteImageIds((prev: any) => [...prev, block.id]);
+      }
+
       setEditingBlog({
         ...editingBlog,
-        images: editingBlog.images.filter((img) => img.id !== imgId),
+        blocks: editingBlog.blocks?.filter((b) => b !== block),
       });
+    } else if (index !== undefined) {
+      // New block
+      setNewBlocks((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
-  const filteredBlogs = blogs.filter(
-    (b) =>
+  const filteredBlogs = blogs.filter((b) => {
+    const text =
+      b.blocks
+        ?.filter((blk) => blk.type === "paragraph" && blk.text)
+        .map((blk) => blk.text)
+        .join(" ") ||
+      b.content ||
+      "";
+    return (
       b.title.toLowerCase().includes(search.toLowerCase()) ||
-      b.content.toLowerCase().includes(search.toLowerCase())
-  );
+      text.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   return (
     <div className="bg-gray-900 text-white p-6">
@@ -90,7 +124,6 @@ export default function BlogManager({
       {error && <p className="text-red-500">{error}</p>}
       {loading && <p>Loading...</p>}
 
-      {/* Search */}
       <input
         type="text"
         placeholder="Search blogs..."
@@ -99,12 +132,12 @@ export default function BlogManager({
         className="mb-4 p-2 w-full rounded bg-gray-800 border border-gray-700"
       />
 
-      {/* Blog List */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
         {filteredBlogs.map((blog) => (
           <div key={blog.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
             {editingBlog?.id === blog.id ? (
-              <div className="space-y-2">
+              <div className="space-y-4">
+                {/* Title */}
                 <input
                   type="text"
                   value={editingBlog.title}
@@ -113,14 +146,118 @@ export default function BlogManager({
                   }
                   className="w-full p-2 rounded bg-gray-700"
                 />
-                <textarea
-                  value={editingBlog.content}
-                  onChange={(e) =>
-                    setEditingBlog({ ...editingBlog, content: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-gray-700"
-                />
-                <div className="flex gap-2">
+
+                {/* Existing blocks */}
+                {editingBlog.blocks?.map((block, i) =>
+                  block.type === "paragraph" ? (
+                    <div key={block.id ?? i} className="flex gap-2 items-start">
+                      <textarea
+                        value={block.text}
+                        onChange={(e) => {
+                          const newBlocks = [...(editingBlog.blocks || [])];
+                          newBlocks[i] = { ...block, text: e.target.value };
+                          setEditingBlog({ ...editingBlog, blocks: newBlocks });
+                        }}
+                        className="flex-1 p-2 rounded bg-gray-700"
+                      />
+                      <button
+                        onClick={() => handleDeleteBlock(block)}
+                        className="bg-red-600 px-2 py-1 rounded text-sm"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    block.url && (
+                      <div key={block.id ?? i} className="relative">
+                        <img
+                          src={block.url}
+                          className="w-32 h-32 object-cover rounded"
+                        />
+                        <button
+                          onClick={() => handleDeleteBlock(block)}
+                          className="absolute top-1 right-1 bg-red-600 px-1 rounded text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )
+                  )
+                )}
+
+                {/* New blocks */}
+                {newBlocks.map((block, i) =>
+                  block.type === "image" ? (
+                    <div key={i} className="flex flex-col gap-2 w-full">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          if (!e.target.files || !e.target.files[0]) return;
+                          const file = e.target.files[0];
+
+                          // Upload file somewhere (e.g., S3) and get URL
+                          const uploadedUrl = await uploadFile(file);
+
+                          const updated = [...newBlocks];
+                          updated[i] = { ...block, url: uploadedUrl };
+                          setNewBlocks(updated);
+                        }}
+                        className="w-full p-2 rounded bg-gray-700 text-white"
+                      />
+                      <button
+                        onClick={() => handleDeleteBlock(undefined, i)}
+                        className="bg-red-600 px-2 py-1 rounded text-sm w-fit"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div key={i} className="flex gap-2 items-start">
+                      <textarea
+                        value={block.text}
+                        onChange={(e) => {
+                          const updated = [...newBlocks];
+                          updated[i] = { ...block, text: e.target.value };
+                          setNewBlocks(updated);
+                        }}
+                        className="flex-1 p-2 rounded bg-gray-700"
+                      />
+                      <button
+                        onClick={() => handleDeleteBlock(undefined, i)}
+                        className="bg-red-600 px-2 py-1 rounded text-sm"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )
+                )}
+
+                {/* Add new blocks */}
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() =>
+                      setNewBlocks([
+                        ...newBlocks,
+                        { type: "paragraph", text: "" },
+                      ])
+                    }
+                    className="bg-green-600 px-3 py-1 rounded"
+                  >
+                    Add Paragraph
+                  </button>
+                  <button
+                    onClick={() =>
+                      setNewBlocks([...newBlocks, { type: "image", url: "" }])
+                    }
+                    className="bg-blue-600 px-3 py-1 rounded"
+                  >
+                    Add Image
+                  </button>
+                </div>
+
+                {/* Save / Cancel */}
+                <div className="flex gap-2 mt-4">
                   <button
                     onClick={handleSaveEdit}
                     className="bg-green-600 px-3 py-1 rounded"
@@ -138,28 +275,31 @@ export default function BlogManager({
             ) : (
               <>
                 <h2 className="text-xl font-semibold">{blog.title}</h2>
-                <p className="text-gray-300">{blog.content}</p>
+                <p className="text-gray-300">
+                  {blog.blocks
+                    ?.filter((b) => b.type === "paragraph")
+                    .map((b) => b.text)
+                    .join(" ") || blog.content}
+                </p>
 
-                {/* Images */}
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  {blog.images?.map((img) => (
+                  {(
+                    blog.blocks
+                      ?.filter((b) => b.type === "image" && b.url)
+                      .map((b, idx) => ({ id: b.id ?? idx, url: b.url! })) ||
+                    blog.images ||
+                    []
+                  ).map((img) => (
                     <div key={img.id} className="relative">
                       <img
                         src={img.url}
                         alt=""
                         className="w-32 h-32 object-cover rounded"
                       />
-                      <button
-                        onClick={() => handleMarkImageForDeletion(img.id)}
-                        className="absolute top-1 right-1 bg-red-600 px-1 rounded text-xs"
-                      >
-                        ✕
-                      </button>
                     </div>
                   ))}
                 </div>
 
-                {/* Actions */}
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => setEditingBlog(blog)}

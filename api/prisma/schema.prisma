@@ -36,6 +36,7 @@ model BlogPost {
   title     String
   content   String
   createdAt DateTime    @default(now())
+  blocks    Json?
   images    BlogImage[]
   Admin     Admin?      @relation(fields: [adminId], references: [id], onDelete: Cascade)
   adminId   Int?

@@ -18,18 +18,17 @@ export default function YoutubeManager() {
     const loadVideos = async () => {
       try {
         const allVideos: YoutubeVideo[] = await fetchAPI("/youtube");
-        const arranged = [
-          allVideos.find((v) => v.onFrontpage) || {
-            title: "",
-            url: "",
-            onFrontpage: true,
-          },
-          ...Array.from(
-            { length: 3 },
-            (_, i) =>
-              allVideos[i + 1] || { title: "", url: "", onFrontpage: false }
-          ),
-        ];
+
+        const frontpage = allVideos.find((v) => v.onFrontpage) || {
+          title: "",
+          url: "",
+          onFrontpage: true,
+        };
+
+        const others = allVideos.filter((v) => !v.onFrontpage);
+
+        const arranged = [frontpage, ...others.slice(0, 3)];
+
         setVideos(arranged);
       } catch (err) {
         console.error("Failed to load videos", err);

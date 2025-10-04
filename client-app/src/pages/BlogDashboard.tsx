@@ -3,6 +3,14 @@ import CreateBlog from "../components/CreateBlog";
 import BlogManager from "../components/BlogManager";
 import { fetchAPI } from "../functions/api";
 
+interface BlogBlock {
+  id?: number;
+  type: "paragraph" | "image";
+  text?: string;
+  url?: string;
+  isMain?: boolean;
+}
+
 interface BlogImage {
   id: number;
   url: string;
@@ -11,8 +19,10 @@ interface BlogImage {
 interface Blog {
   id: number;
   title: string;
-  content: string;
-  images: BlogImage[];
+  content?: string;
+  images?: BlogImage[];
+  blocks?: BlogBlock[];
+  newImageUrls?: string[];
 }
 
 export default function BlogDashboard() {
@@ -23,8 +33,8 @@ export default function BlogDashboard() {
   const loadBlogs = async () => {
     try {
       setLoading(true);
-      const data = await fetchAPI<{ blogs: Blog[] }>("/blog");
-      setBlogs(data.blogs);
+      const data = await fetchAPI<{ blogs?: Blog[] }>("/blog");
+      setBlogs(Array.isArray(data.blogs) ? data.blogs : []);
     } catch (err: any) {
       setError(err.message || "Failed to load blogs");
     } finally {

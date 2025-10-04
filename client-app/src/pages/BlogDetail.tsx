@@ -7,10 +7,14 @@ interface BlogImage {
   url: string;
 }
 
+type BlogBlock =
+  | { type: "paragraph"; text: string }
+  | { type: "image"; url: string; isMain?: boolean };
+
 interface Blog {
   id: number;
   title: string;
-  content: string;
+  blocks: BlogBlock[];
   images: BlogImage[];
   author?: string;
   createdAt?: string;
@@ -58,15 +62,31 @@ export default function BlogDetail() {
             : "Date unknown"}
         </p>
 
-        {blog.images?.[0] && (
-          <img
-            src={blog.images[0].url}
-            alt={blog.title}
-            className="w-full max-h-96 object-cover rounded-lg mt-4"
-          />
-        )}
-
-        <div className="mt-6 text-lg leading-relaxed">{blog.content}</div>
+        {/* Render blocks */}
+        <div className="mt-6 space-y-6">
+          {blog.blocks.map((block, i) => {
+            if (block.type === "paragraph") {
+              return (
+                <p key={i} className="text-lg leading-relaxed">
+                  {block.text}
+                </p>
+              );
+            }
+            if (block.type === "image") {
+              return (
+                <img
+                  key={i}
+                  src={block.url}
+                  alt={`Blog image ${i + 1}`}
+                  className={`w-full rounded-lg ${
+                    block.isMain ? "border-4 border-yellow-400" : ""
+                  }`}
+                />
+              );
+            }
+            return null;
+          })}
+        </div>
       </div>
     </div>
   );

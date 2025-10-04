@@ -7,11 +7,19 @@ interface BlogImage {
   url: string;
 }
 
+interface BlogBlock {
+  type: "paragraph" | "image";
+  text?: string;
+  url?: string;
+  isMain?: boolean;
+}
+
 interface Blog {
   id: number;
   title: string;
-  content: string;
-  images: BlogImage[];
+  content?: string;
+  images?: BlogImage[];
+  blocks?: BlogBlock[] | null;
   author?: string;
   createdAt?: string;
 }
@@ -47,28 +55,45 @@ export default function Blog() {
       {error && <p className="text-red-500">{error}</p>}
 
       <div className="flex flex-col gap-4 max-w-4xl mx-auto">
-        {blogs.map((blog) => (
-          <Link
-            to={`/blog/${blog.id}`}
-            key={blog.id}
-            className="flex items-center gap-4 bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition"
-          >
-            {/* Thumbnail */}
-            {blog.images?.[0] && (
-              <img
-                src={blog.images[0].url}
-                alt={blog.title}
-                className="w-24 h-24 object-cover rounded"
-              />
-            )}
+        {blogs.map((blog) => {
+          const blocks = blog.blocks || [];
 
-            {/* Blog preview */}
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold">{blog.title}</h2>
-              <p className="text-gray-400 line-clamp-2">{blog.content}</p>
-            </div>
-          </Link>
-        ))}
+          // Determine main image: first look for block.isMain, then any block image, then fallback to old images array
+          const mainImage =
+            blocks.find((b) => b.type === "image" && b.isMain)?.url ||
+            blocks.find((b) => b.type === "image")?.url ||
+            blog.images?.[0]?.url;
+
+          // Determine preview text: concatenate paragraph blocks, fallback to old content
+          const previewText =
+            blocks
+              .filter((b) => b.type === "paragraph" && b.text)
+              .map((b) => b.text)
+              .join(" ") ||
+            blog.content ||
+            "";
+
+          return (
+            <Link
+              to={`/blog/${blog.id}`}
+              key={blog.id}
+              className="flex items-center gap-4 bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition"
+            >
+              {mainImage && (
+                <img
+                  src={mainImage}
+                  alt={blog.title}
+                  className="w-24 h-24 object-cover rounded"
+                />
+              )}
+
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold">{blog.title}</h2>
+                <p className="text-gray-400 line-clamp-2">{previewText}</p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
