@@ -47,16 +47,14 @@ export default function BlogDetail() {
   if (error) return <p className="p-6 text-red-500">{error}</p>;
   if (!blog) return null;
 
-  // Normalize blocks to always be an array
-  const blocks: BlogBlock[] = blog.blocks ?? [];
-
-  // For old blogs with no blocks, create a single paragraph block from content
-  const displayBlocks =
-    blocks.length > 0
-      ? blocks
-      : blog.content
-      ? [{ type: "paragraph", text: blog.content }]
-      : [];
+  // Combine blocks + old images into a single array
+  const displayBlocks: Array<
+    BlogBlock | { type: "image"; url: string; isMain?: boolean }
+  > = [
+    ...(blog.blocks ?? []),
+    ...(blog.images?.map((img) => ({ type: "image", url: img.url } as const)) ??
+      []),
+  ];
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -74,7 +72,7 @@ export default function BlogDetail() {
             : "Date unknown"}
         </p>
 
-        {/* Render blocks */}
+        {/* Render blocks and images */}
         <div className="mt-6 space-y-6">
           {displayBlocks.map((block, i) => {
             if (block.type === "paragraph") {
@@ -85,7 +83,6 @@ export default function BlogDetail() {
               );
             }
 
-            // Type guard for image blocks
             if (block.type === "image") {
               const imageBlock = block as {
                 type: "image";
