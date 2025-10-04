@@ -34,7 +34,7 @@ export default function Blog() {
       try {
         setLoading(true);
         const data = await fetchAPI<{ blogs: Blog[] }>("/blog");
-        setBlogs(data.blogs);
+        setBlogs(Array.isArray(data.blogs) ? data.blogs : []);
       } catch (err: any) {
         setError(err.message || "Failed to load blogs");
       } finally {
@@ -56,15 +56,15 @@ export default function Blog() {
 
       <div className="flex flex-col gap-4 max-w-4xl mx-auto">
         {blogs.map((blog) => {
-          const blocks = blog.blocks || [];
+          const blocks = blog.blocks ?? [];
 
-          // Determine main image: first look for block.isMain, then any block image, then fallback to old images array
+          // Determine main image
           const mainImage =
             blocks.find((b) => b.type === "image" && b.isMain)?.url ||
             blocks.find((b) => b.type === "image")?.url ||
             blog.images?.[0]?.url;
 
-          // Determine preview text: concatenate paragraph blocks, fallback to old content
+          // Determine preview text
           const previewText =
             blocks
               .filter((b) => b.type === "paragraph" && b.text)
