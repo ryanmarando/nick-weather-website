@@ -164,3 +164,41 @@ export const deleteBlog = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Failed to delete blog" });
   }
 };
+
+export const fakePost = async (req: Request, res: Response) => {
+  try {
+    const blogData = {
+      id: 37,
+      title: "Dry Weekend Ahead",
+      content:
+        "September 26, 2025: Happy Friday, everyone! Weather Specialist Nick Dunn here to break down the forecast as we look over the next several days! We had some fog this morning, but it was great to see sunshine to end the week. temperatures have climbed into the middle 70s, which is right on par for where we should be this time of year. We remain perfect weather wise for high school football in terms of avoiding rain! Tonight will be much cooler than last week, but staying dry. We will fall into the 60s by the end of any games tonight. Some patchy fog could develop overnight, but not as widespread as this morning. Saturday will be dry and generally sunny after any patchy fog early mixes out. Highs climb to the low 80s, which is about five degrees above normal for the last weekend of September! Sunday will be a carbon copy, but a just warmer with lower to maybe even a few middle 80s. It is likely we are dry for the next seven days.",
+      createdAt: new Date("2025-09-30T14:40:52.322Z"),
+      adminId: null,
+      images: [
+        {
+          url: "https://nickdunn-weather-website.s3.us-east-2.amazonaws.com/Screenshot 2025-09-30 103839.png",
+        },
+      ],
+    };
+
+    const created = await prisma.blogPost.create({
+      data: {
+        title: blogData.title,
+        content: blogData.content,
+        createdAt: blogData.createdAt,
+        adminId: blogData.adminId,
+        images: {
+          create: blogData.images.map((img) => ({ url: img.url })),
+        },
+      },
+      include: { images: true },
+    });
+
+    res.json({ message: "Fake blog inserted", blog: created });
+  } catch (err: any) {
+    console.error("Error inserting fake blog:", err);
+    res
+      .status(500)
+      .json({ message: "Failed to insert blog", error: err.message });
+  }
+};

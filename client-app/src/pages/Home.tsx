@@ -61,6 +61,16 @@ export default function HomePage() {
     getFrontYouTubePageVideo();
   }, []);
 
+  // Helper: get blocks or fallback to content + images
+  const getDisplayBlocks = (blog: any) => {
+    const paragraphBlock = blog.content
+      ? [{ type: "paragraph", text: blog.content }]
+      : [];
+    const imageBlocks =
+      blog.images?.map((img: any) => ({ type: "image", url: img.url })) ?? [];
+    return blog.blocks ?? paragraphBlock.concat(imageBlocks);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-900 via-blue-800 to-gray-900 text-white">
       {/* Hero Section */}
@@ -148,7 +158,6 @@ export default function HomePage() {
       </section>
 
       {/* Latest Blog */}
-      {/* Latest Blog */}
       {latestBlog && (
         <div className="w-full bg-gray-800 text-white py-8 px-6 lg:px-20">
           <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
@@ -163,14 +172,11 @@ export default function HomePage() {
 
               {/* Preview text: paragraph blocks first, fallback to content */}
               <p className="text-gray-300 mb-4 line-clamp-3">
-                {(
-                  latestBlog.blocks
-                    ?.filter((b: any) => b.type === "paragraph" && b.text)
-                    .map((b: any) => b.text)
-                    .join(" ") ||
-                  latestBlog.content ||
-                  ""
-                ).slice(0, 150)}
+                {getDisplayBlocks(latestBlog)
+                  .filter((b: any) => b.type === "paragraph" && b.text)
+                  .map((b: any) => b.text)
+                  .join(" ")
+                  .slice(0, 150)}
                 ...
               </p>
 
@@ -191,24 +197,25 @@ export default function HomePage() {
             </div>
 
             {/* Blog image */}
-            {(latestBlog.blocks?.find(
-              (b: any) => b.type === "image" && b.isMain
-            )?.url ||
-              latestBlog.blocks?.find((b: any) => b.type === "image")?.url ||
-              latestBlog.images?.[0]?.url) && (
-              <img
-                src={
-                  latestBlog.blocks?.find(
-                    (b: any) => b.type === "image" && b.isMain
-                  )?.url ||
-                  latestBlog.blocks?.find((b: any) => b.type === "image")
-                    ?.url ||
-                  latestBlog.images?.[0]?.url
-                }
-                alt={latestBlog.title}
-                className="w-full max-w-sm rounded-lg shadow-md object-cover"
-              />
-            )}
+            {/* Blog image */}
+            {(() => {
+              const displayBlocks = getDisplayBlocks(latestBlog);
+              // Get main image: first block with isMain, then first image block
+              const mainImage =
+                displayBlocks.find((b: any) => b.type === "image" && b.isMain)
+                  ?.url ||
+                displayBlocks.find((b: any) => b.type === "image")?.url;
+
+              if (!mainImage) return null;
+
+              return (
+                <img
+                  src={mainImage}
+                  alt={latestBlog.title}
+                  className="w-full max-w-sm rounded-lg shadow-md object-cover"
+                />
+              );
+            })()}
           </div>
         </div>
       )}

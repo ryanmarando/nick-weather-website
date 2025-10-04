@@ -6,6 +6,7 @@ import {
   createBlog,
   updateBlog,
   deleteBlog,
+  fakePost,
 } from "../controllers/blog";
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.get("/:id", getBlogById);
 router.post("/", authenticate, createBlog);
 router.patch("/:id", authenticate, updateBlog);
 router.delete("/:id", authenticate, deleteBlog);
+//router.post("/fake-insert-dry-weekend", fakePost);
 
 export default router;

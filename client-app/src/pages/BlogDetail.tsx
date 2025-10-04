@@ -51,11 +51,11 @@ export default function BlogDetail() {
   const displayBlocks: Array<
     BlogBlock | { type: "image"; url: string; isMain?: boolean }
   > = [
-    ...(blog.blocks ?? []),
+    ...(blog.blocks ??
+      (blog.content ? [{ type: "paragraph", text: blog.content }] : [])),
     ...(blog.images?.map((img) => ({ type: "image", url: img.url } as const)) ??
       []),
   ];
-
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-3xl mx-auto">
